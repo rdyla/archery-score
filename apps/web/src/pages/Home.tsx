@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { useUser } from '@clerk/clerk-react';
@@ -54,6 +55,17 @@ function RoundCard({ round }: { round: Round }) {
 export function HomePage() {
   const { user } = useUser();
   const api = useApi();
+
+  // Ensure shooter profile exists in DB on first sign-in
+  useEffect(() => {
+    if (!api || !user) return;
+    api.post('/me', {
+      name: user.fullName ?? user.firstName ?? 'Archer',
+      email: user.primaryEmailAddress?.emailAddress ?? null,
+      avatar_url: user.imageUrl ?? null,
+    }).catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
   const { data: rounds = [], isLoading } = useQuery<Round[]>({
     queryKey: ['rounds'],

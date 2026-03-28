@@ -1,12 +1,5 @@
 const API_BASE = import.meta.env.VITE_API_URL ?? '/api';
 
-async function getToken(): Promise<string> {
-  // Clerk exposes the session token via the window.__clerk_frontend_api hooks
-  // At runtime we import dynamically to avoid circular deps
-  const { getAuth } = await import('@clerk/clerk-react');
-  // In practice we pass the token from components via a helper — see useApi()
-  throw new Error('Use useApi() hook to get an authenticated client');
-}
 
 export interface ApiClient {
   get<T>(path: string): Promise<T>;

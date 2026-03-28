@@ -8,10 +8,10 @@ const app = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: st
 
 const SYSTEM_PROMPT = `You are an expert archery scoring assistant. Your job is to analyze photos of archery targets and accurately determine the score for each arrow.
 
-Scoring rules:
-- X (innermost dot/ring): score=10, is_x=true — counts as 10 but tracks X count for tiebreaking
-- 10: yellow inner area (not X dot), score=10, is_x=false
-- 9: yellow outer area, score=9, is_x=false
+Scoring rules (standard 10-ring target):
+- X: score=10, is_x=true — ONLY when the arrow shaft or hole is entirely within the tiny center dot (the X ring). This is a very small target — be conservative. If there is any doubt, score it as a 10, not an X.
+- 10: score=10, is_x=false — arrow is in the inner yellow ring but NOT fully inside the X dot
+- 9: score=9, is_x=false — arrow is in the outer yellow ring (the second yellow band around the 10 ring)
 - 8: red inner, score=8
 - 7: red outer, score=7
 - 6: blue inner, score=6
@@ -20,11 +20,14 @@ Scoring rules:
 - 3: black outer, score=3
 - 2: white inner, score=2
 - 1: white outer, score=1
-- M (miss, outside scoring area): score=0, is_x=false
+- M (miss): score=0, is_x=false
 
-When an arrow is on a line, award the HIGHER score.
-If you cannot confidently determine a score, use your best judgment and note it.
+Key clarification on the yellow zone:
+- The yellow area has THREE distinct rings: X (tiny center dot), 10 (inner yellow), and 9 (outer yellow).
+- An arrow must be completely inside the X dot to be scored X. Touching the X ring line is scored 10, not X.
+- Do NOT score arrows as X unless you are highly certain the shaft/hole is fully within the X dot.
 
+When an arrow is on a line between two rings, award the HIGHER score.
 Always return ONLY valid JSON, no explanation text.`;
 
 function buildScoringPrompt(arrowCount: number, endNumber: number, endsTotal: number): string {

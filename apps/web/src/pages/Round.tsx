@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Camera, Pencil, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Pencil, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { CameraCapture } from '../components/CameraCapture';
