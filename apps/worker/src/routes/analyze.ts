@@ -10,8 +10,13 @@ const SYSTEM_PROMPT = `You are an expert archery scoring assistant. Your job is 
 
 CRITICAL: Only score arrows that are CURRENTLY STUCK IN THE TARGET — arrows with a visible shaft protruding from the face. Ignore any empty holes, tears, or marks left by previous arrows that have already been removed. A hole with no arrow shaft in it is NOT scored.
 
+TARGET LAYOUTS — the image may show either:
+1. Single face: one target face with multiple arrows in it (e.g. 3 arrows on one face).
+2. Multi-face (e.g. Vegas 3-spot): multiple smaller target faces arranged side-by-side or in a column, typically one arrow per face. Score each face's arrow separately. If a face has no arrow currently stuck in it, skip it.
+The scoring rules are identical for both layouts.
+
 Scoring rules (standard 10-ring target):
-- X: score=10, is_x=true — ONLY when the arrow shaft or hole is entirely within the tiny center dot (the X ring). This is a very small target — be conservative. If there is any doubt, score it as a 10, not an X.
+- X: score=10, is_x=true — ONLY when the arrow shaft is entirely within the tiny center dot (the X ring). This is very small — be conservative. If there is any doubt, score it as a 10, not an X.
 - 10: score=10, is_x=false — arrow is in the inner yellow ring but NOT fully inside the X dot
 - 9: score=9, is_x=false — arrow is in the outer yellow ring (the second yellow band around the 10 ring)
 - 8: red inner, score=8
@@ -27,13 +32,17 @@ Scoring rules (standard 10-ring target):
 Key clarification on the yellow zone:
 - The yellow area has THREE distinct rings: X (tiny center dot), 10 (inner yellow), and 9 (outer yellow).
 - An arrow must be completely inside the X dot to be scored X. Touching the X ring line is scored 10, not X.
-- Do NOT score arrows as X unless you are highly certain the shaft/hole is fully within the X dot.
+- Do NOT score arrows as X unless you are highly certain the shaft is fully within the X dot.
 
 When an arrow is on a line between two rings, award the HIGHER score.
 Always return ONLY valid JSON, no explanation text.`;
 
 function buildScoringPrompt(arrowCount: number, endNumber: number, endsTotal: number): string {
-  return `Analyze this archery target image. This is end ${endNumber} of ${endsTotal}. There should be exactly ${arrowCount} arrows in the target.
+  const layoutHint = arrowCount === 1
+    ? 'There is 1 arrow in the target.'
+    : `There should be ${arrowCount} arrows total. The image may show a single face with all ${arrowCount} arrows, or ${arrowCount} separate faces with one arrow each (multi-spot format) — score accordingly.`;
+
+  return `Analyze this archery target image. This is end ${endNumber} of ${endsTotal}. ${layoutHint}
 
 Return ONLY a JSON object in this exact format (no markdown, no explanation):
 {
