@@ -90,32 +90,36 @@ app.post('/', clerkAuth, async (c) => {
     return c.json({ error: `End number exceeds round total (${round.ends_total})` }, 400);
   }
 
-  // Upload image to R2
+  // Upload image to R2 and score with AI — all wrapped so any failure returns a clean 422
   const imageBuffer = await imageFile.arrayBuffer();
   const imageKey = `${userId}/${roundId}/end-${endNumber}-${Date.now()}.jpg`;
-
-  await c.env.IMAGES.put(imageKey, imageBuffer, {
-    httpMetadata: { contentType: imageFile.type || 'image/jpeg' },
-    customMetadata: { roundId, endNumber: String(endNumber), userId },
-  });
-
-  // Convert to base64 for Anthropic Vision
-  const base64Image = btoa(
-    new Uint8Array(imageBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
-  );
-  const mediaType = (imageFile.type || 'image/jpeg') as
-    | 'image/jpeg'
-    | 'image/png'
-    | 'image/gif'
-    | 'image/webp';
-
-  // Call Anthropic Vision
-  const anthropic = new Anthropic({ apiKey: c.env.ANTHROPIC_API_KEY });
 
   let aiResult: AiScoreResult;
   let aiRawJson: string;
 
   try {
+    await c.env.IMAGES.put(imageKey, imageBuffer, {
+      httpMetadata: { contentType: imageFile.type || 'image/jpeg' },
+      customMetadata: { roundId, endNumber: String(endNumber), userId },
+    });
+
+    // Convert to base64 in chunks — the btoa(reduce) pattern OOMs on large images
+    const bytes = new Uint8Array(imageBuffer);
+    let binary = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < bytes.length; i += chunkSize) {
+      binary += String.fromCharCode(...(bytes.subarray(i, i + chunkSize) as unknown as number[]));
+    }
+    const base64Image = btoa(binary);
+
+    const mediaType = (imageFile.type || 'image/jpeg') as
+      | 'image/jpeg'
+      | 'image/png'
+      | 'image/gif'
+      | 'image/webp';
+
+    const anthropic = new Anthropic({ apiKey: c.env.ANTHROPIC_API_KEY });
+
     const message = await anthropic.messages.create({
       model: 'claude-opus-4-6',
       max_tokens: 1024,
@@ -168,12 +172,12 @@ app.post('/', clerkAuth, async (c) => {
       notes: parsed.notes ?? '',
     };
   } catch (err) {
-    // If AI fails, return the image key so the client can do manual entry
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error('analyze error:', detail);
     return c.json(
       {
-        error: 'AI scoring failed — please enter scores manually',
+        error: `AI scoring failed: ${detail}`,
         image_key: imageKey,
-        details: err instanceof Error ? err.message : 'Unknown error',
       },
       422
     );
