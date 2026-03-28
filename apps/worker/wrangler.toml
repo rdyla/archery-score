@@ -1,0 +1,26 @@
+name = "archery-score-api"
+main = "src/index.ts"
+compatibility_date = "2025-03-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+CLERK_PUBLISHABLE_KEY = ""  # Set via wrangler secret or dashboard
+
+# D1 Database
+[[d1_databases]]
+binding = "DB"
+database_name = "archery-score-db"
+database_id = "REPLACE_WITH_YOUR_D1_ID"
+
+# R2 Bucket for target images
+[[r2_buckets]]
+binding = "IMAGES"
+bucket_name = "archery-score-images"
+
+# KV Namespace for sessions/cache
+[[kv_namespaces]]
+binding = "KV"
+id = "REPLACE_WITH_YOUR_KV_ID"
+
+[dev]
+port = 8787

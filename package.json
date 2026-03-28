@@ -1,0 +1,14 @@
+{
+  "name": "archery-score",
+  "private": true,
+  "workspaces": [
+    "apps/worker",
+    "apps/web"
+  ],
+  "scripts": {
+    "dev:worker": "npm run dev --workspace=apps/worker",
+    "dev:web": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web && npm run build --workspace=apps/worker",
+    "deploy": "npm run deploy --workspace=apps/worker"
+  }
+}
