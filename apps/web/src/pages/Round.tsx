@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, Pencil, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { ArrowLeft, Camera, Pencil, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { CameraCapture } from '../components/CameraCapture';
@@ -25,7 +25,7 @@ export function RoundPage() {
   const api = useApi();
   const queryClient = useQueryClient();
 
-  const [entryMode, setEntryMode] = useState<EntryMode>('idle');
+  const [entryMode, setEntryMode] = useState<EntryMode>('manual');
   const [editingEndId, setEditingEndId] = useState<string | null>(null);
   const [aiReview, setAiReview] = useState<AiReviewState | null>(null);
   const [aiError, setAiError] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export function RoundPage() {
       }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['round', id] });
-      setEntryMode('idle');
+      setEntryMode('manual');
       setEditingEndId(null);
     },
   });
@@ -78,7 +78,7 @@ export function RoundPage() {
       api!.patch(`/analyze/ends/${endId}`, { arrows }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['round', id] });
-      setEntryMode('idle');
+      setEntryMode('manual');
       setEditingEndId(null);
     },
   });
@@ -271,9 +271,16 @@ export function RoundPage() {
                   arrowCount={round.arrows_per_end}
                   maxScore={round.max_arrow_score}
                   onSubmit={saveManual}
-                  onCancel={() => { setEntryMode('idle'); setAiError(null); }}
+                  onCancel={undefined}
                   loading={isSavingManual}
                 />
+                <button
+                  onClick={() => { setAiError(null); setEntryMode('idle'); }}
+                  className="w-full text-xs text-gray-600 hover:text-gray-400 py-1 tap-highlight-none flex items-center justify-center gap-1"
+                >
+                  <Camera size={12} />
+                  Try AI scoring instead
+                </button>
               </div>
             ) : null}
 
