@@ -8,6 +8,8 @@ const app = new Hono<{ Bindings: Env; Variables: { userId: string; userEmail: st
 
 const SYSTEM_PROMPT = `You are an expert archery scoring assistant. Your job is to analyze photos of archery targets and accurately determine the score for each arrow.
 
+CRITICAL: Only score arrows that are CURRENTLY STUCK IN THE TARGET — arrows with a visible shaft protruding from the face. Ignore any empty holes, tears, or marks left by previous arrows that have already been removed. A hole with no arrow shaft in it is NOT scored.
+
 Scoring rules (standard 10-ring target):
 - X: score=10, is_x=true — ONLY when the arrow shaft or hole is entirely within the tiny center dot (the X ring). This is a very small target — be conservative. If there is any doubt, score it as a 10, not an X.
 - 10: score=10, is_x=false — arrow is in the inner yellow ring but NOT fully inside the X dot
@@ -106,7 +108,7 @@ app.post('/', clerkAuth, async (c) => {
 
   try {
     const message = await anthropic.messages.create({
-      model: 'claude-opus-4-6',
+      model: 'claude-sonnet-4-6',
       max_tokens: 1024,
       system: SYSTEM_PROMPT,
       messages: [
