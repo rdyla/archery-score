@@ -4,6 +4,7 @@ import { logger } from 'hono/logger';
 import shootersRoute from './routes/shooters';
 import roundsRoute from './routes/rounds';
 import analyzeRoute from './routes/analyze';
+import imagesRoute from './routes/images';
 import type { Env } from './types';
 
 const app = new Hono<{ Bindings: Env }>();
@@ -31,6 +32,7 @@ app.get('/', (c) => c.json({ status: 'ok', service: 'archery-score-api' }));
 app.route('/api', shootersRoute);
 app.route('/api/rounds', roundsRoute);
 app.route('/api/analyze', analyzeRoute);
+app.route('/api/images', imagesRoute);
 
 // 404 handler
 app.notFound((c) => c.json({ error: 'Not found' }, 404));

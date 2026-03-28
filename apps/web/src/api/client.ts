@@ -6,6 +6,7 @@ export interface ApiClient {
   post<T>(path: string, body?: unknown): Promise<T>;
   patch<T>(path: string, body?: unknown): Promise<T>;
   postForm<T>(path: string, form: FormData): Promise<T>;
+  getBlob(url: string): Promise<string>; // returns an object URL
 }
 
 export function createApiClient(token: string): ApiClient {
@@ -41,6 +42,11 @@ export function createApiClient(token: string): ApiClient {
     post: <T>(path: string, body?: unknown) => request<T>('POST', path, body),
     patch: <T>(path: string, body?: unknown) => request<T>('PATCH', path, body),
     postForm: <T>(path: string, form: FormData) => request<T>('POST', path, form, true),
+    getBlob: async (url: string): Promise<string> => {
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return URL.createObjectURL(await res.blob());
+    },
   };
 }
 

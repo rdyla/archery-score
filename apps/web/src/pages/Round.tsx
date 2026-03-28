@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader } from '../components/ui/Card';
 import { CameraCapture } from '../components/CameraCapture';
 import { ManualScoreEntry } from '../components/ManualScoreEntry';
 import { EndRow } from '../components/ScoreDisplay';
+import { TargetImage } from '../components/TargetImage';
 import { useApi } from '../hooks/useApi';
 import type { RoundWithEnds, AiScoreResponse, Arrow } from '../api/client';
 import { clsx } from 'clsx';
@@ -27,6 +28,7 @@ export function RoundPage() {
   const [entryMode, setEntryMode] = useState<EntryMode>('idle');
   const [editingEndId, setEditingEndId] = useState<string | null>(null);
   const [aiReview, setAiReview] = useState<AiReviewState | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const { data: round, isLoading } = useQuery<RoundWithEnds>({
     queryKey: ['round', id],
@@ -49,8 +51,8 @@ export function RoundPage() {
       setEntryMode('ai-review');
       queryClient.invalidateQueries({ queryKey: ['round', id] });
     },
-    onError: () => {
-      // Fall back to manual entry
+    onError: (err) => {
+      setAiError(err instanceof Error ? err.message : 'AI scoring failed');
       setEntryMode('manual');
     },
   });
@@ -186,6 +188,7 @@ export function RoundPage() {
               <div className="space-y-3">
                 <CameraCapture
                   onCapture={(file) => {
+                    setAiError(null);
                     setEntryMode('camera');
                     analyzeImage(file);
                   }}
@@ -207,6 +210,13 @@ export function RoundPage() {
               </div>
             ) : entryMode === 'ai-review' && aiReview ? (
               <div className="space-y-4">
+                {/* Show the captured target image for reference */}
+                {(() => {
+                  const savedEnd = round.ends.find((e) => e.id === aiReview.response.end_id);
+                  return savedEnd?.image_url ? (
+                    <TargetImage imageUrl={savedEnd.image_url} className="w-full max-h-64 object-contain" />
+                  ) : null;
+                })()}
                 <div className={clsx(
                   'rounded-xl p-3 text-sm',
                   aiReview.response.confidence >= 0.85
@@ -250,13 +260,21 @@ export function RoundPage() {
                 />
               </div>
             ) : entryMode === 'manual' ? (
-              <ManualScoreEntry
-                arrowCount={round.arrows_per_end}
-                maxScore={round.max_arrow_score}
-                onSubmit={saveManual}
-                onCancel={() => setEntryMode('idle')}
-                loading={isSavingManual}
-              />
+              <div className="space-y-3">
+                {aiError && (
+                  <div className="rounded-xl p-3 text-sm bg-red-900/30 text-red-400 flex items-start gap-2">
+                    <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+                    <span>AI scoring failed — enter scores manually.<br /><span className="text-xs opacity-70">{aiError}</span></span>
+                  </div>
+                )}
+                <ManualScoreEntry
+                  arrowCount={round.arrows_per_end}
+                  maxScore={round.max_arrow_score}
+                  onSubmit={saveManual}
+                  onCancel={() => { setEntryMode('idle'); setAiError(null); }}
+                  loading={isSavingManual}
+                />
+              </div>
             ) : null}
 
             {/* Edit existing end overlay */}
@@ -265,6 +283,11 @@ export function RoundPage() {
                 <h3 className="text-sm font-medium text-gray-400 mb-3">
                   Edit End {editingEnd.end_number}
                 </h3>
+                {editingEnd.image_url && (
+                  <div className="mb-4">
+                    <TargetImage imageUrl={editingEnd.image_url} className="w-full max-h-64 object-contain" />
+                  </div>
+                )}
                 <ManualScoreEntry
                   arrowCount={round.arrows_per_end}
                   maxScore={round.max_arrow_score}

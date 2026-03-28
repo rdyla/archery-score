@@ -91,7 +91,7 @@ app.get('/:id', clerkAuth, async (c) => {
   if (!round) return c.json({ error: 'Round not found' }, 404);
   if (round.shooter_id !== userId) return c.json({ error: 'Forbidden' }, 403);
 
-  const imageUrlPrefix = `https://images.archery-score.workers.dev`;
+  const imageUrlPrefix = `${new URL(c.req.url).origin}/api/images`;
   const full = await getRoundWithEnds(c.env.DB, roundId, imageUrlPrefix);
   return c.json(full);
 });
